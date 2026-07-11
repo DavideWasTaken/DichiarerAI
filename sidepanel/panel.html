@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DichiarerAI</title>
+  <link rel="stylesheet" href="panel.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="brand">
+      <img src="../icons/icon48.png" alt="" class="logo" />
+      <div>
+        <h1>DichiarerAI</h1>
+        <p class="tagline">La dichiarazione si compila da sola ✨</p>
+      </div>
+    </div>
+    <button id="btn-impostazioni" class="icon-btn" title="Impostazioni">⚙️</button>
+  </header>
+
+  <div id="banner-sito" class="banner warn hidden">
+    ⚠️ Non sei sulla dichiarazione precompilata.<br />
+    <a href="https://dichiarazioneprecompilata.agenziaentrate.gov.it" target="_blank" rel="noopener">
+      Apri il sito dell'Agenzia delle Entrate →
+    </a>
+  </div>
+
+  <main>
+    <!-- PASSO 1: lettura pagina -->
+    <section class="card">
+      <h2><span class="step">1</span> Leggi la sezione</h2>
+      <p class="hint">Apri il quadro che vuoi compilare (es. Quadro T), poi leggi i campi presenti.</p>
+      <button id="btn-leggi" class="btn primary">📖 Leggi la pagina</button>
+      <div id="esito-lettura" class="esito hidden"></div>
+      <details id="dettaglio-campi" class="hidden">
+        <summary>Mostra i campi rilevati</summary>
+        <ul id="lista-campi"></ul>
+      </details>
+    </section>
+
+    <!-- PASSO 2: documenti -->
+    <section class="card">
+      <h2><span class="step">2</span> Allega documenti <span class="opzionale">(opzionale)</span></h2>
+      <p class="hint">PDF, immagini, CSV, Excel, TXT… vengono inviati all'AI come allegati, come in una chat.</p>
+      <label class="file-drop" id="file-drop">
+        <input type="file" id="input-file" multiple
+          accept=".csv,.xlsx,.xls,.txt,.json,.tsv,.md,.pdf,.png,.jpg,.jpeg,.gif,.webp" hidden />
+        <span>📎 Trascina qui i file o <u>sfoglia</u></span>
+      </label>
+      <ul id="lista-file" class="file-list"></ul>
+    </section>
+
+    <!-- PASSO 3: istruzioni -->
+    <section class="card">
+      <h2><span class="step">3</span> Scrivi cosa serve</h2>
+      <textarea id="istruzioni" rows="4"
+        placeholder="Es.: «Compila la sezione II con le plusvalenze del report allegato» oppure «Ho venduto azioni per 6.996 € comprate a 6.117 €, compila il rigo giusto»"></textarea>
+      <button id="btn-analizza" class="btn primary big" disabled>✨ Compila con l'AI</button>
+      <div id="caricamento" class="loading hidden">
+        <div class="spinner"></div>
+        <span>L'AI sta analizzando la sezione…</span>
+      </div>
+      <div id="errore" class="banner error hidden"></div>
+    </section>
+
+    <!-- RISULTATI -->
+    <section id="sezione-risultati" class="card risultati hidden">
+      <h2>💡 Proposta di compilazione</h2>
+      <p id="spiegazione" class="spiegazione"></p>
+      <div id="avvertenze"></div>
+      <ul id="lista-proposte" class="proposte"></ul>
+      <div class="azioni">
+        <button id="btn-applica" class="btn success big">✔️ Applica i campi selezionati</button>
+      </div>
+      <div id="esito-applica" class="esito hidden"></div>
+    </section>
+  </main>
+
+  <footer>
+    <p>⚠️ DichiarerAI è un assistente: <strong>verifica sempre i valori</strong> prima di inviare la dichiarazione. I dati della pagina e i file allegati vengono inviati al provider AI configurato.</p>
+  </footer>
+
+  <script src="../lib/xlsx.full.min.js"></script>
+  <script src="panel.js"></script>
+</body>
+</html>

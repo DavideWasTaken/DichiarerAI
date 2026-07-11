@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>DichiarerAI — Impostazioni</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <div class="contenitore">
+    <header>
+      <img src="../icons/icon48.png" alt="" />
+      <div>
+        <h1>DichiarerAI — Impostazioni</h1>
+        <p>Configura il provider AI e la tua chiave API.</p>
+      </div>
+    </header>
+
+    <section class="card">
+      <h2>Provider AI</h2>
+      <div class="scelta-provider">
+        <label class="radio-card">
+          <input type="radio" name="provider" value="anthropic" checked />
+          <div>
+            <b>Claude</b> (Anthropic)
+            <small>Consigliato: ottimo con PDF e documenti</small>
+          </div>
+        </label>
+        <label class="radio-card">
+          <input type="radio" name="provider" value="openai" />
+          <div>
+            <b>OpenAI</b>
+            <small>GPT-4o e successivi</small>
+          </div>
+        </label>
+      </div>
+    </section>
+
+    <section class="card" id="sezione-anthropic">
+      <h2>Claude (Anthropic)</h2>
+      <label class="campo">
+        <span>Chiave API <small>(inizia con sk-ant-…)</small></span>
+        <div class="riga-chiave">
+          <input type="password" id="anthropic-key" placeholder="sk-ant-api03-…" autocomplete="off" />
+          <button type="button" class="mostra" data-target="anthropic-key">👁</button>
+        </div>
+        <small class="aiuto">La ottieni su <a href="https://platform.claude.com" target="_blank" rel="noopener">platform.claude.com</a></small>
+      </label>
+      <label class="campo">
+        <span>Modello</span>
+        <div class="riga-modello">
+          <select id="anthropic-model"></select>
+          <button type="button" class="refresh" id="refresh-anthropic"
+            title="Scarica l'elenco aggiornato dei modelli da Anthropic">🔄</button>
+        </div>
+        <input type="text" id="anthropic-model-custom" class="hidden" placeholder="ID modello personalizzato" />
+        <small class="aiuto">Premi 🔄 per scaricare i modelli più recenti (serve la chiave API).</small>
+      </label>
+    </section>
+
+    <section class="card hidden" id="sezione-openai">
+      <h2>OpenAI</h2>
+      <label class="campo">
+        <span>Chiave API <small>(inizia con sk-…)</small></span>
+        <div class="riga-chiave">
+          <input type="password" id="openai-key" placeholder="sk-…" autocomplete="off" />
+          <button type="button" class="mostra" data-target="openai-key">👁</button>
+        </div>
+        <small class="aiuto">La ottieni su <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com</a></small>
+      </label>
+      <label class="campo">
+        <span>Modello</span>
+        <div class="riga-modello">
+          <select id="openai-model"></select>
+          <button type="button" class="refresh" id="refresh-openai"
+            title="Scarica l'elenco aggiornato dei modelli da OpenAI">🔄</button>
+        </div>
+        <input type="text" id="openai-model-custom" class="hidden" placeholder="ID modello personalizzato" />
+        <small class="aiuto">Premi 🔄 per scaricare i modelli più recenti (serve la chiave API).</small>
+      </label>
+    </section>
+
+    <div class="azioni">
+      <button id="btn-test" class="btn secondario">🔌 Prova la connessione</button>
+      <button id="btn-salva" class="btn primario">💾 Salva</button>
+    </div>
+    <div id="esito" class="esito hidden"></div>
+
+    <footer>
+      <p>🔒 Le chiavi API sono salvate <b>solo sul tuo computer</b> (chrome.storage.local) e usate esclusivamente per chiamare il provider scelto. I dati della pagina della dichiarazione e i file allegati vengono inviati al provider AI quando premi «Compila con l'AI».</p>
+    </footer>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

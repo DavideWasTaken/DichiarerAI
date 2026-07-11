@@ -1,0 +1,8 @@
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Pacchetti dell'estensione
+*.zip
+*.crx
+*.pem
