@@ -97,11 +97,3 @@ DichiarerAI/
 │   └── xlsx.full.min.js   # SheetJS: conversione Excel → CSV
 └── icons/                 # Icone dell'estensione
 ```
-
-## 🤝 Contribuire
-
-Segnalazioni e pull request sono benvenute! Alcune idee:
-
-- [ ] Supporto ad altri quadri con conoscenze fiscali dedicate (E — Oneri, W — Estero…)
-- [ ] Cronologia delle compilazioni effettuate
-- [ ] Supporto ad altri provider AI (Gemini, modelli locali via Ollama…)
