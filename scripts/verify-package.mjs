@@ -5,7 +5,9 @@ import { execFileSync } from 'node:child_process';
 const manifest = JSON.parse(fs.readFileSync('manifest.json', 'utf8'));
 const zip = `dist/DichiarerAI-v${manifest.version}.zip`;
 if (!fs.existsSync(zip)) throw new Error(`missing ${zip}`);
-const entries = execFileSync('tar', ['-tf', zip], { encoding: 'utf8' })
+const listCommand = process.platform === 'win32'
+  ? ['tar', ['-tf', zip]] : ['unzip', ['-Z1', zip]];
+const entries = execFileSync(listCommand[0], listCommand[1], { encoding: 'utf8' })
   .split(/\r?\n/).filter(Boolean);
 for (const required of ['manifest.json', 'background.js', 'lib/core.js',
   'lib/providers.js', 'lib/page-bridge.js', 'sidepanel/panel.html']) {
