@@ -1,366 +1,125 @@
-// DichiarerAI — service worker
-// Gestisce le chiamate alle API AI (Anthropic Claude / OpenAI).
+// DichiarerAI service worker: credentials and provider traffic stay here.
+importScripts('lib/core.js', 'lib/providers.js');
 
+const CORE = DichiarerCore;
+const PROVIDERS = DichiarerProviders;
+const OPENAI_URL = 'https://api.openai.com/v1/responses';
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
-const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
+const activeRequests = new Map();
 
-// Apre il pannello laterale al clic sull'icona dell'estensione
-chrome.sidePanel
-  .setPanelBehavior({ openPanelOnActionClick: true })
-  .catch(() => {});
-
-// Schema JSON della risposta attesa dal modello
-const RESULT_SCHEMA = {
-  type: 'object',
-  properties: {
-    spiegazione: {
-      type: 'string',
-      description: 'Breve spiegazione in italiano di cosa è stato compilato e come sono stati calcolati i valori'
-    },
-    compilazioni: {
-      type: 'array',
-      description: 'Elenco dei campi da compilare',
-      items: {
-        type: 'object',
-        properties: {
-          id: {
-            type: 'integer',
-            description: "L'ID numerico del campo, preso dall'elenco dei campi forniti"
-          },
-          valore: {
-            type: 'string',
-            description: 'Il valore da inserire nel campo. Per checkbox: "true" o "false". Per select: il testo esatto di una delle opzioni.'
-          },
-          motivo: {
-            type: 'string',
-            description: 'Breve motivazione in italiano del valore proposto'
-          }
-        },
-        required: ['id', 'valore', 'motivo'],
-        additionalProperties: false
-      }
-    },
-    avvertenze: {
-      type: 'array',
-      description: 'Avvertenze importanti per l\'utente: dati mancanti, ambiguità, controlli da fare',
-      items: { type: 'string' }
-    }
-  },
-  required: ['spiegazione', 'compilazioni', 'avvertenze'],
-  additionalProperties: false
-};
-
-const SYSTEM_PROMPT = `Sei DichiarerAI, un assistente esperto nella compilazione della dichiarazione dei redditi italiana (modello 730 e Redditi Persone Fisiche) sul sito della dichiarazione precompilata dell'Agenzia delle Entrate.
-
-Ricevi:
-1. L'elenco dei campi presenti nella sezione della dichiarazione che l'utente sta guardando. Ogni campo ha un ID numerico, un'etichetta, un contesto (rigo/sezione, es. "T11", "Sezione II") e il valore attuale.
-2. Le istruzioni dell'utente.
-3. Eventuali documenti allegati come file veri e propri: PDF (CU, report del broker, ricevute), immagini (foto di scontrini o documenti), CSV, testo. Leggili direttamente ed estrai tu i dati che servono.
-
-Il tuo compito è determinare quali campi compilare e con quali valori, restituendo un JSON conforme allo schema richiesto.
-
-REGOLE FONDAMENTALI:
-- Proponi SOLO i campi realmente necessari in base alla richiesta e ai dati disponibili. Non compilare campi a caso.
-- Il campo "id" deve essere esattamente uno degli ID forniti nell'elenco. Non inventare ID.
-- NON inventare dati. Se mancano informazioni per completare la richiesta, spiega cosa manca in "avvertenze".
-- Se i documenti allegati contengono i dati (es. report di plusvalenze di un broker), calcola tu i totali corretti (somme di corrispettivi, costi, minusvalenze, ecc.) e mostra il calcolo in "motivo".
-
-FORMATO DEI VALORI:
-- Importi in euro: la maggior parte dei campi mostra ",00" ed è arrotondata all'euro: fornisci solo la parte intera, senza separatore delle migliaia e senza decimali (es. "6996"). Arrotonda all'euro più vicino.
-- Se un campo accetta chiaramente decimali, usa la virgola come separatore decimale (formato italiano, es. "1234,56").
-- Checkbox: "true" per spuntare, "false" per togliere la spunta.
-- Radio button: "true" sul radio corretto del gruppo.
-- Menu a tendina (select): usa il testo esatto di una delle opzioni elencate per quel campo.
-- Codici fiscali e partite IVA: maiuscoli, senza spazi.
-- Date: nel formato richiesto dal campo (tipicamente GG/MM/AAAA).
-
-CONOSCENZE UTILI (quadro T — plusvalenze finanziarie, anno d'imposta 2025):
-- Sezione II (T11-T16): plusvalenze con imposta sostitutiva 26% (azioni, ETF non armonizzati gestiti in dichiarativo, ecc.). T11 col.1 = totale corrispettivi (vendite), col.2 = totale costi/valori di acquisto.
-- Sezione V (T41-T45): plusvalenze da cripto-attività (26%), con distinzione ante 2025 / 2025.
-- Le minusvalenze di anni precedenti (certificate o da precedente dichiarazione) vanno nei righi dedicati (T13/T14, T43/T44).
-- Quadro W: monitoraggio investimenti esteri e IVAFE/IVIE.
-Applica le regole fiscali italiane vigenti con prudenza: in caso di dubbio interpretativo, segnalalo in "avvertenze" invece di tirare a indovinare.
-
-Rispondi sempre in italiano.`;
-
-// ---------------------------------------------------------------------------
-
-function buildMainText({ pageInfo, fields, userText }) {
-  const parts = [];
-
-  parts.push('## Pagina attuale');
-  parts.push(`URL: ${pageInfo.url || 'n/d'}`);
-  parts.push(`Sezione: ${pageInfo.title || 'n/d'}`);
-  parts.push('');
-
-  parts.push('## Campi disponibili nella pagina (JSON)');
-  parts.push(JSON.stringify(fields));
-  parts.push('');
-
-  parts.push("## Richiesta dell'utente");
-  parts.push(userText || '(nessuna istruzione specifica: compila ciò che è deducibile dai documenti allegati)');
-
-  return parts.join('\n');
-}
-
-// Gli allegati vengono passati al modello così come sono (come in una chat):
-// immagini e PDF in base64, file di testo come documento testuale.
-
-function anthropicContent({ mainText, attachments }) {
-  const blocks = [];
-  for (const a of attachments || []) {
-    if (a.kind === 'image') {
-      blocks.push({
-        type: 'image',
-        source: { type: 'base64', media_type: a.mediaType, data: a.data }
-      });
-    } else if (a.kind === 'pdf') {
-      blocks.push({
-        type: 'document',
-        source: { type: 'base64', media_type: 'application/pdf', data: a.data },
-        title: a.name
-      });
-    } else {
-      blocks.push({
-        type: 'document',
-        source: { type: 'text', media_type: 'text/plain', data: a.text },
-        title: a.name
-      });
-    }
-  }
-  blocks.push({ type: 'text', text: mainText });
-  return blocks;
-}
-
-function openaiContent({ mainText, attachments }) {
-  const parts = [];
-  const testi = [];
-  for (const a of attachments || []) {
-    if (a.kind === 'image') {
-      parts.push({
-        type: 'image_url',
-        image_url: { url: `data:${a.mediaType};base64,${a.data}` }
-      });
-    } else if (a.kind === 'pdf') {
-      parts.push({
-        type: 'file',
-        file: { filename: a.name, file_data: `data:application/pdf;base64,${a.data}` }
-      });
-    } else {
-      testi.push(`### File allegato: ${a.name}\n\`\`\`\n${a.text}\n\`\`\``);
-    }
-  }
-  const testoCompleto = testi.length > 0 ? `${testi.join('\n\n')}\n\n${mainText}` : mainText;
-  parts.push({ type: 'text', text: testoCompleto });
-  return parts;
-}
-
-// Modelli Claude che supportano il ragionamento adattivo
-function supportsAdaptiveThinking(model) {
-  return /claude-(fable|opus-4-[678]|sonnet-4-6)/.test(model);
-}
-
-async function callAnthropic({ apiKey, model, systemPrompt, content }) {
-  const body = {
-    model,
-    max_tokens: 16000,
-    system: systemPrompt,
-    messages: [{ role: 'user', content }],
-    output_config: {
-      format: { type: 'json_schema', schema: RESULT_SCHEMA }
-    }
-  };
-  if (supportsAdaptiveThinking(model)) {
-    body.thinking = { type: 'adaptive' };
-  }
-
-  const res = await fetch(ANTHROPIC_URL, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true'
-    },
-    body: JSON.stringify(body)
-  });
-
-  const data = await res.json();
-  if (!res.ok) {
-    const msg = data?.error?.message || `Errore API Anthropic (HTTP ${res.status})`;
-    throw new Error(msg);
-  }
-
-  const textBlock = (data.content || []).find((b) => b.type === 'text');
-  if (!textBlock) throw new Error('Risposta del modello vuota o non valida.');
-  return JSON.parse(textBlock.text);
-}
-
-async function callOpenAI({ apiKey, model, systemPrompt, content }) {
-  const body = {
-    model,
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content }
-    ],
-    response_format: {
-      type: 'json_schema',
-      json_schema: {
-        name: 'compilazione_dichiarazione',
-        strict: true,
-        schema: RESULT_SCHEMA
-      }
-    }
-  };
-
-  const res = await fetch(OPENAI_URL, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${apiKey}`
-    },
-    body: JSON.stringify(body)
-  });
-
-  const data = await res.json();
-  if (!res.ok) {
-    const msg = data?.error?.message || `Errore API OpenAI (HTTP ${res.status})`;
-    throw new Error(msg);
-  }
-
-  const rispostaTesto = data?.choices?.[0]?.message?.content;
-  if (!rispostaTesto) throw new Error('Risposta del modello vuota o non valida.');
-  return JSON.parse(rispostaTesto);
-}
+chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
 
 async function getConfig() {
-  const cfg = await chrome.storage.local.get({
-    provider: 'anthropic',
-    anthropicKey: '',
-    anthropicModel: 'claude-opus-4-8',
-    openaiKey: '',
-    openaiModel: 'gpt-4o'
-  });
-  return cfg;
+  return chrome.storage.local.get({ provider: 'openai', openaiKey: '',
+    openaiModel: 'gpt-5.6', anthropicKey: '', anthropicModel: 'claude-sonnet-5' });
 }
 
-async function handleAnalizza(payload) {
+function auth(provider, key) {
+  return provider === 'openai'
+    ? { 'content-type': 'application/json', authorization: `Bearer ${key}` }
+    : { 'content-type': 'application/json', 'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true' };
+}
+
+async function post(provider, key, body, signal) {
+  const response = await fetch(provider === 'openai' ? OPENAI_URL : ANTHROPIC_URL, {
+    method: 'POST', headers: auth(provider, key), body: JSON.stringify(body), signal
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw PROVIDERS.classifyProviderError(
+    provider, response.status, data, response.headers);
+  return data;
+}
+
+function analysisInput(payload, model, messages) {
+  const years = { declarationYear: Number(payload.declarationYear),
+    incomeYear: Number(payload.incomeYear) };
+  const page = payload.pageInfo || {};
+  return { model, systemPrompt: CORE.buildSystemPrompt(years),
+    prompt: [`Pagina: ${page.title || 'n/d'} (${page.url || 'n/d'})`,
+      `Campi disponibili: ${JSON.stringify(payload.fields || [])}`,
+      `Richiesta: ${payload.userText || 'Analizza i documenti allegati.'}`].join('\n\n'),
+    attachments: payload.attachments || [], ...(messages ? { messages } : {}) };
+}
+
+async function analyze(payload, requestId) {
   const cfg = await getConfig();
-  const mainText = buildMainText(payload);
-  const attachments = payload.attachments || [];
-
-  if (cfg.provider === 'openai') {
-    if (!cfg.openaiKey) {
-      throw new Error('Chiave API OpenAI non configurata. Apri le impostazioni (⚙️) e inseriscila.');
+  const provider = cfg.provider === 'anthropic' ? 'anthropic' : 'openai';
+  const key = provider === 'openai' ? cfg.openaiKey : cfg.anthropicKey;
+  const model = provider === 'openai' ? cfg.openaiModel : cfg.anthropicModel;
+  if (!key) throw new Error(`Configura prima la chiave API ${provider === 'openai' ? 'OpenAI' : 'Anthropic'}.`);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort('timeout'), 120000);
+  activeRequests.set(requestId, controller);
+  try {
+    let parsed;
+    if (provider === 'openai') {
+      const data = await post(provider, key,
+        PROVIDERS.buildOpenAIRequest(analysisInput(payload, model)), controller.signal);
+      parsed = PROVIDERS.parseOpenAIResponse(data);
+    } else {
+      let messages;
+      let remaining = 3;
+      for (let continuation = 0; continuation <= 2; continuation++) {
+        const input = analysisInput(payload, model, messages);
+        const body = PROVIDERS.buildAnthropicRequest(input, remaining);
+        const data = await post(provider, key, body, controller.signal);
+        parsed = PROVIDERS.parseAnthropicResponse(data);
+        remaining = Math.max(0, remaining - parsed.searchCount);
+        if (!parsed.pauseTurn) break;
+        if (continuation === 2) throw new Error('Anthropic non ha completato la risposta dopo due continuazioni.');
+        messages = [...body.messages, { role: 'assistant', content: parsed.assistantContent }];
+      }
     }
-    return callOpenAI({
-      apiKey: cfg.openaiKey,
-      model: cfg.openaiModel || 'gpt-4o',
-      systemPrompt: SYSTEM_PROMPT,
-      content: openaiContent({ mainText, attachments })
-    });
+    const years = { declarationYear: Number(payload.declarationYear),
+      incomeYear: Number(payload.incomeYear) };
+    return { result: CORE.validateResult(parsed.result, payload.fields || [], parsed.sources, years),
+      sources: CORE.filterOfficialSources(parsed.sources, years), provider, model };
+  } finally {
+    clearTimeout(timeout);
+    activeRequests.delete(requestId);
   }
-
-  if (!cfg.anthropicKey) {
-    throw new Error('Chiave API Claude non configurata. Apri le impostazioni (⚙️) e inseriscila.');
-  }
-  return callAnthropic({
-    apiKey: cfg.anthropicKey,
-    model: cfg.anthropicModel || 'claude-opus-4-8',
-    systemPrompt: SYSTEM_PROMPT,
-    content: anthropicContent({ mainText, attachments })
-  });
 }
 
-// Verifica rapida della chiave API dalle impostazioni
-async function handleTest({ provider, apiKey, model }) {
-  if (provider === 'openai') {
-    const res = await fetch(OPENAI_URL, {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        authorization: `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model,
-        messages: [{ role: 'user', content: 'ping' }],
-        max_completion_tokens: 16
-      })
-    });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data?.error?.message || `HTTP ${res.status}`);
-    }
-    return true;
-  }
+async function capabilityProbe({ provider, apiKey, model }) {
+  if (!apiKey) throw new Error('Inserisci una chiave API.');
+  const probe = PROVIDERS.buildCapabilityProbe(provider, model);
+  const data = await post(provider, apiKey, probe.body, AbortSignal.timeout(120000));
+  const parsed = provider === 'openai'
+    ? PROVIDERS.parseOpenAIResponse(data) : PROVIDERS.parseAnthropicResponse(data);
+  if (parsed.pauseTurn) throw new Error('La prova non è stata completata dal provider.');
+  return { warning: probe.warning, sources: parsed.sources };
+}
 
-  const res = await fetch(ANTHROPIC_URL, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true'
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens: 16,
-      messages: [{ role: 'user', content: 'ping' }]
-    })
-  });
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data?.error?.message || `HTTP ${res.status}`);
+async function listModels({ provider, apiKey }) {
+  if (!apiKey) throw new Error('Inserisci una chiave API.');
+  const url = provider === 'openai' ? 'https://api.openai.com/v1/models'
+    : 'https://api.anthropic.com/v1/models?limit=100';
+  const response = await fetch(url, { headers: auth(provider, apiKey) });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw PROVIDERS.classifyProviderError(
+    provider, response.status, data, response.headers);
+  return (data.data || []).map((item) => ({ id: item.id, label: item.display_name || item.id }))
+    .filter((item) => provider === 'anthropic' ? /^claude-/.test(item.id) : /^gpt-/.test(item.id))
+    .sort((a, b) => a.id.localeCompare(b.id));
+}
+
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  const action = message && message.action;
+  if (action === 'cancel') {
+    activeRequests.get(message.requestId)?.abort('cancelled');
+    sendResponse({ ok: true });
+    return false;
   }
+  const work = action === 'analizza' ? analyze(message.payload || {}, message.requestId)
+    : action === 'test' || action === 'testCapability' ? capabilityProbe(message.payload || {})
+      : action === 'listModels' ? listModels(message.payload || {})
+        : Promise.reject(new Error('Azione non supportata.'));
+  work.then((data) => sendResponse(action === 'listModels'
+    ? { ok: true, models: data } : { ok: true, data }))
+    .catch((error) => sendResponse({ ok: false,
+      error: error && error.name === 'AbortError'
+        ? 'Richiesta annullata o scaduta.' : error.message || 'Errore imprevisto.' }));
   return true;
-}
-
-// Scarica l'elenco dei modelli disponibili dal provider
-async function handleListModels({ provider, apiKey }) {
-  if (provider === 'openai') {
-    const res = await fetch('https://api.openai.com/v1/models', {
-      headers: { authorization: `Bearer ${apiKey}` }
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.error?.message || `HTTP ${res.status}`);
-    // Tiene solo i modelli chat, esclude embedding/audio/immagini ecc.
-    const esclusi = /embed|tts|whisper|audio|realtime|transcribe|moderation|dall-e|image|davinci|babbage|instruct|search|computer-use|codex/;
-    return (data.data || [])
-      .filter((m) => /^(gpt-|o\d|chatgpt)/.test(m.id) && !esclusi.test(m.id))
-      .sort((a, b) => (b.created || 0) - (a.created || 0))
-      .map((m) => ({ id: m.id, label: m.id }));
-  }
-
-  const res = await fetch('https://api.anthropic.com/v1/models?limit=100', {
-    headers: {
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true'
-    }
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data?.error?.message || `HTTP ${res.status}`);
-  return (data.data || []).map((m) => ({ id: m.id, label: m.display_name || m.id }));
-}
-
-chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-  if (msg?.action === 'analizza') {
-    handleAnalizza(msg.payload)
-      .then((data) => sendResponse({ ok: true, data }))
-      .catch((err) => sendResponse({ ok: false, error: err.message }));
-    return true; // risposta asincrona
-  }
-  if (msg?.action === 'test') {
-    handleTest(msg.payload)
-      .then(() => sendResponse({ ok: true }))
-      .catch((err) => sendResponse({ ok: false, error: err.message }));
-    return true;
-  }
-  if (msg?.action === 'listModels') {
-    handleListModels(msg.payload)
-      .then((models) => sendResponse({ ok: true, models }))
-      .catch((err) => sendResponse({ ok: false, error: err.message }));
-    return true;
-  }
-  return false;
 });

@@ -1,0 +1,39 @@
+{
+  "id": "resp_fixture",
+  "status": "completed",
+  "output": [
+    {
+      "id": "ws_fixture",
+      "type": "web_search_call",
+      "status": "completed",
+      "action": {
+        "type": "search",
+        "queries": ["istruzioni dichiarazione 2025 site:agenziaentrate.gov.it"],
+        "sources": [
+          {
+            "type": "url",
+            "title": "Istruzioni dichiarazione 2025",
+            "url": "https://www.agenziaentrate.gov.it/portale/istruzioni-2025"
+          },
+          {
+            "type": "url",
+            "url": "https://infoprecompilata.agenziaentrate.gov.it/portale/guida-generale#capitolo"
+          }
+        ]
+      }
+    },
+    {
+      "id": "msg_fixture",
+      "type": "message",
+      "status": "completed",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "annotations": [],
+          "text": "{\"spiegazione\":\"Proposta verificata.\",\"compilazioni\":[{\"id\":10,\"valore\":\"6996\",\"motivo\":\"Importo documentato.\",\"fonti\":[\"https://www.agenziaentrate.gov.it/portale/istruzioni-2025\"]}],\"avvertenze\":[]}"
+        }
+      ]
+    }
+  ]
+}

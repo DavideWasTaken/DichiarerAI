@@ -12,7 +12,7 @@
       <img src="../icons/icon48.png" alt="" class="logo" />
       <div>
         <h1>DichiarerAI</h1>
-        <p class="tagline">La dichiarazione si compila da sola ✨</p>
+        <p class="tagline">Proposte motivate da fonti ufficiali</p>
       </div>
     </div>
     <button id="btn-impostazioni" class="icon-btn" title="Impostazioni">⚙️</button>
@@ -29,7 +29,7 @@
     <!-- PASSO 1: lettura pagina -->
     <section class="card">
       <h2><span class="step">1</span> Leggi la sezione</h2>
-      <p class="hint">Apri il quadro che vuoi compilare (es. Quadro T), poi leggi i campi presenti.</p>
+      <p class="hint">Apri il quadro che vuoi controllare, poi acquisisci i campi presenti.</p>
       <button id="btn-leggi" class="btn primary">📖 Leggi la pagina</button>
       <div id="esito-lettura" class="esito hidden"></div>
       <details id="dettaglio-campi" class="hidden">
@@ -55,7 +55,17 @@
       <h2><span class="step">3</span> Scrivi cosa serve</h2>
       <textarea id="istruzioni" rows="4"
         placeholder="Es.: «Compila la sezione II con le plusvalenze del report allegato» oppure «Ho venduto azioni per 6.996 € comprate a 6.117 €, compila il rigo giusto»"></textarea>
-      <button id="btn-analizza" class="btn primary big" disabled>✨ Compila con l'AI</button>
+      <div class="riga-anni">
+        <label>Anno dichiarazione <input id="anno-dichiarazione" type="number" min="2020" max="2100" /></label>
+        <label>Anno redditi <input id="anno-redditi" type="number" min="2019" max="2099" /></label>
+      </div>
+      <label class="consenso"><input id="includi-valori" type="checkbox" /> Includi anche i valori già presenti nei campi</label>
+      <div class="banner warn disclosure">I campi selezionati, le istruzioni e gli allegati vengono inviati direttamente al provider AI configurato. Il provider esegue ricerche web su domini ufficiali dell’Agenzia delle Entrate; queste ricerche possono avere un costo.</div>
+      <label class="consenso"><input id="consenso-invio" type="checkbox" /> Confermo l’invio di questi dati per questa analisi</label>
+      <div class="azioni">
+        <button id="btn-analizza" class="btn primary big" disabled>✨ Analizza con l'AI</button>
+        <button id="btn-annulla" class="btn hidden">Annulla</button>
+      </div>
       <div id="caricamento" class="loading hidden">
         <div class="spinner"></div>
         <span>L'AI sta analizzando la sezione…</span>
@@ -65,7 +75,7 @@
 
     <!-- RISULTATI -->
     <section id="sezione-risultati" class="card risultati hidden">
-      <h2>💡 Proposta di compilazione</h2>
+      <h2>💡 Proposta per <span id="anni-risultato"></span></h2>
       <p id="spiegazione" class="spiegazione"></p>
       <div id="avvertenze"></div>
       <ul id="lista-proposte" class="proposte"></ul>
@@ -73,14 +83,17 @@
         <button id="btn-applica" class="btn success big">✔️ Applica i campi selezionati</button>
       </div>
       <div id="esito-applica" class="esito hidden"></div>
+      <p class="hint"><strong>Applica</strong> modifica soltanto i campi visibili: non salva e non invia la dichiarazione.</p>
     </section>
   </main>
 
   <footer>
-    <p>⚠️ DichiarerAI è un assistente: <strong>verifica sempre i valori</strong> prima di inviare la dichiarazione. I dati della pagina e i file allegati vengono inviati al provider AI configurato.</p>
+    <p>⚠️ Prototipo sperimentale: <strong>verifica sempre valori e fonti</strong> prima di salvare o inviare la dichiarazione.</p>
   </footer>
 
   <script src="../lib/xlsx.full.min.js"></script>
+  <script src="../lib/core.js"></script>
+  <script src="../lib/page-bridge.js"></script>
   <script src="panel.js"></script>
 </body>
 </html>

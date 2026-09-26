@@ -6,3 +6,5 @@ Thumbs.db
 *.zip
 *.crx
 *.pem
+node_modules/
+dist/

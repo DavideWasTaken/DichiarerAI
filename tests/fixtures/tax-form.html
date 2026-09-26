@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <title>Dichiarazione precompilata</title>
+</head>
+<body>
+  <h1>  Dichiarazione   precompilata 730  </h1>
+  <main>
+    <form id="tax-form">
+    <section>
+      <h2> Quadro E </h2>
+      <table>
+        <tr class="rigo">
+          <th>E1</th>
+          <td><label for="testo"> Spese   sanitarie </label><input id="testo" name="spese" type="text" value="1000" required pattern="[0-9]+" maxlength="12"></td>
+        </tr>
+        <tr class="rigo">
+          <th>E2</th>
+          <td><label for="numero">Importo</label><input id="numero" type="number" value="20" min="0" max="9999" step="0.01"></td>
+        </tr>
+        <tr class="rigo"><th>E3</th><td><label for="data">Data</label><input id="data" type="date" value="2025-05-02"></td></tr>
+        <tr class="rigo"><th>E4</th><td><label for="mese">Mese</label><input id="mese" type="month" value="2025-05"></td></tr>
+        <tr class="rigo"><th>E5</th><td><label for="email">Email</label><input id="email" type="email" value="mario@example.test"></td></tr>
+        <tr class="rigo"><th>E6</th><td><label for="telefono">Telefono</label><input id="telefono" type="tel" value="06123456"></td></tr>
+        <tr class="rigo">
+          <th>E7</th>
+          <td>
+            <label for="regime">Regime</label>
+            <select id="regime">
+              <option value=""> -- Scegli -- </option>
+              <option value="ordinario" selected> Ordinario </option>
+              <option value="semplificato">Regime   semplificato</option>
+              <option value="long-a">Etichetta XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX A</option>
+              <option value="long-b">Etichetta XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX B</option>
+              <option value="ambiguous-a">Scelta   ambigua</option>
+              <option value="ambiguous-b">Scelta ambigua</option>
+              <option value="opzione-04">Opzione 04</option>
+              <option value="opzione-05">Opzione 05</option>
+              <option value="opzione-06">Opzione 06</option>
+              <option value="opzione-07">Opzione 07</option>
+              <option value="opzione-08">Opzione 08</option>
+              <option value="opzione-09">Opzione 09</option>
+              <option value="opzione-10">Opzione 10</option>
+              <option value="opzione-11">Opzione 11</option>
+              <option value="opzione-12">Opzione 12</option>
+              <option value="opzione-13">Opzione 13</option>
+              <option value="opzione-14">Opzione 14</option>
+              <option value="opzione-15">Opzione 15</option>
+              <option value="opzione-16">Opzione 16</option>
+              <option value="opzione-17">Opzione 17</option>
+              <option value="opzione-18">Opzione 18</option>
+              <option value="opzione-19">Opzione 19</option>
+              <option value="opzione-20">Opzione 20</option>
+              <option value="opzione-21">Opzione 21</option>
+              <option value="opzione-22">Opzione 22</option>
+              <option value="opzione-23">Opzione 23</option>
+              <option value="opzione-24">Opzione 24</option>
+              <option value="opzione-25">Opzione 25</option>
+              <option value="opzione-26">Opzione 26</option>
+              <option value="opzione-27">Opzione 27</option>
+              <option value="opzione-28">Opzione 28</option>
+              <option value="opzione-29">Opzione 29</option>
+              <option value="opzione-30">Opzione 30</option>
+              <option value="opzione-31">Opzione 31</option>
+              <option value="opzione-32">Opzione 32</option>
+              <option value="opzione-33">Opzione 33</option>
+              <option value="opzione-34">Opzione 34</option>
+            </select>
+          </td>
+        </tr>
+        <tr class="rigo"><th>E8</th><td><label for="note">Note</label><textarea id="note" maxlength="80">Testo iniziale</textarea></td></tr>
+        <tr class="rigo"><th>E9</th><td><label><input id="conferma" type="checkbox" checked> Conferma dati </label></td></tr>
+        <tr class="rigo">
+          <th>E10</th>
+          <td>
+            <span id="scelta-label">Tipo dichiarazione</span>
+            <label><input id="radio-si" name="scelta" type="radio" value="si" checked aria-labelledby="scelta-label scelta-si"><span id="scelta-si">Sì</span></label>
+            <label><input id="radio-no" name="scelta" type="radio" value="no" aria-label="No">No</label>
+            <label><input id="radio-disabled" name="scelta" type="radio" value="bloccato" aria-label="Bloccato" disabled>Bloccato</label>
+          </td>
+        </tr>
+      </table>
+    </section>
+
+    <section aria-label="Controlli esclusi">
+      <input id="password" type="password" value="segreto">
+      <input id="file" type="file">
+      <input id="hidden" type="hidden" value="nascosto">
+      <input id="search" type="search" value="ricerca">
+      <input id="input-button" type="button" value="Pulsante">
+      <input id="submit" type="submit" value="Invia">
+      <input id="reset" type="reset" value="Azzera">
+      <input id="image" type="image" alt="Immagine">
+      <input id="range" type="range" value="5">
+      <input id="color" type="color" value="#ffffff">
+      <input id="time" type="time" value="10:00">
+      <input id="week" type="week" value="2025-W01">
+      <input id="datetime" type="datetime-local" value="2025-01-01T10:00">
+      <input id="disabled" type="text" value="non modificabile" disabled>
+      <input id="readonly" type="text" value="sola lettura" readonly>
+      <input id="display-none" type="text" value="invisibile" style="display:none">
+      <button id="fake-save" type="button">Salva dichiarazione</button>
+    </section>
+    </form>
+  </main>
+</body>
+</html>

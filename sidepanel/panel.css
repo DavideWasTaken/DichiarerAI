@@ -137,6 +137,14 @@ main { padding: 12px; display: flex; flex-direction: column; gap: 12px; }
 
 .hidden { display: none !important; }
 
+.riga-anni { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+.riga-anni label { font-size: 12px; font-weight: 600; }
+.riga-anni input { box-sizing: border-box; width: 100%; margin-top: 5px; padding: 8px; }
+.consenso { display: flex; gap: 8px; align-items: flex-start; margin: 10px 0; font-size: 12px; }
+.disclosure { margin-top: 12px; font-size: 12px; }
+.fonti { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+.fonti a { font-size: 11px; }
+
 /* ---------- campi rilevati ---------- */
 details { margin-top: 10px; font-size: 12px; }
 details summary { cursor: pointer; color: var(--blu); font-weight: 600; }

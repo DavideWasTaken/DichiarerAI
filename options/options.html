@@ -22,14 +22,14 @@
           <input type="radio" name="provider" value="anthropic" checked />
           <div>
             <b>Claude</b> (Anthropic)
-            <small>Consigliato: ottimo con PDF e documenti</small>
+            <small>Ricerca fonti ufficiali e analizza documenti</small>
           </div>
         </label>
         <label class="radio-card">
           <input type="radio" name="provider" value="openai" />
           <div>
             <b>OpenAI</b>
-            <small>GPT-4o e successivi</small>
+            <small>Responses API con ricerca web ufficiale</small>
           </div>
         </label>
       </div>
@@ -80,13 +80,14 @@
     </section>
 
     <div class="azioni">
-      <button id="btn-test" class="btn secondario">🔌 Prova la connessione</button>
+      <button id="btn-test" class="btn secondario">🔌 Prova modello e ricerca</button>
       <button id="btn-salva" class="btn primario">💾 Salva</button>
     </div>
     <div id="esito" class="esito hidden"></div>
 
     <footer>
-      <p>🔒 Le chiavi API sono salvate <b>solo sul tuo computer</b> (chrome.storage.local) e usate esclusivamente per chiamare il provider scelto. I dati della pagina della dichiarazione e i file allegati vengono inviati al provider AI quando premi «Compila con l'AI».</p>
+      <p>🔒 Le chiavi API sono salvate localmente in <code>chrome.storage.local</code>, che non è un archivio cifrato. La prova esegue una ricerca web e può avere un costo. Campi, istruzioni e allegati vengono inviati direttamente al provider scelto solo dopo la conferma nel pannello.</p>
+      <p><a href="../PRIVACY.md" target="_blank" rel="noopener noreferrer">Privacy</a> · <a href="../SECURITY.md" target="_blank" rel="noopener noreferrer">Security</a></p>
     </footer>
   </div>
 

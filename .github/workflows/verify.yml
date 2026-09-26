@@ -1,0 +1,27 @@
+name: verify
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.12.0
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run verify
+      - run: npm run package
+      - run: npm run verify:package
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DichiarerAI-v1.1.0
+          path: |
+            dist/DichiarerAI-v1.1.0.zip
+            dist/DichiarerAI-v1.1.0.zip.sha256

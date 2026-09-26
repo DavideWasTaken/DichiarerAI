@@ -5,16 +5,14 @@ const $ = (sel) => document.querySelector(sel);
 // Elenchi di partenza: vengono sostituiti da quelli scaricati con 🔄
 const MODELLI_DEFAULT = {
   anthropic: [
-    { id: 'claude-opus-4-8', label: 'Claude Opus 4.8 (consigliato)' },
-    { id: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6 (più veloce ed economico)' },
-    { id: 'claude-haiku-4-5', label: 'Claude Haiku 4.5 (il più economico)' }
+    { id: 'claude-sonnet-5', label: 'Claude Sonnet 5 (predefinito)' }
   ],
   openai: [
-    { id: 'gpt-4o', label: 'GPT-4o (consigliato)' },
-    { id: 'gpt-4o-mini', label: 'GPT-4o mini (economico)' },
-    { id: 'gpt-4.1', label: 'GPT-4.1' }
+    { id: 'gpt-5.6', label: 'GPT-5.6 (predefinito)' }
   ]
 };
+
+let configurazioneVerificata = '';
 
 // Elenchi correnti per provider (default o scaricati)
 const modelli = {
@@ -83,9 +81,9 @@ async function carica() {
   const cfg = await chrome.storage.local.get({
     provider: 'anthropic',
     anthropicKey: '',
-    anthropicModel: 'claude-opus-4-8',
+    anthropicModel: 'claude-sonnet-5',
     openaiKey: '',
-    openaiModel: 'gpt-4o',
+    openaiModel: 'gpt-5.6',
     anthropicModels: null,
     openaiModels: null
   });
@@ -105,14 +103,26 @@ async function carica() {
   aggiornaSezioni();
 }
 
-async function salva() {
-  const cfg = {
+function configurazioneCorrente() {
+  return {
     provider: providerSelezionato(),
     anthropicKey: $('#anthropic-key').value.trim(),
-    anthropicModel: leggiModello('anthropic') || 'claude-opus-4-8',
+    anthropicModel: leggiModello('anthropic') || 'claude-sonnet-5',
     openaiKey: $('#openai-key').value.trim(),
-    openaiModel: leggiModello('openai') || 'gpt-4o'
+    openaiModel: leggiModello('openai') || 'gpt-5.6'
   };
+}
+
+function firma(cfg) {
+  const p = cfg.provider;
+  return [p, cfg[`${p}Key`], cfg[`${p}Model`]].join('\n');
+}
+
+async function salva() {
+  const cfg = configurazioneCorrente();
+  if (firma(cfg) !== configurazioneVerificata) {
+    return mostraEsito('❌ Esegui prima «Prova la connessione»: la prova usa una ricerca web e può avere un costo.', false);
+  }
   await chrome.storage.local.set(cfg);
   mostraEsito('✅ Impostazioni salvate!', true);
   return cfg;
@@ -153,7 +163,7 @@ async function aggiornaModelli(provider) {
 }
 
 async function prova() {
-  const cfg = await salva();
+  const cfg = configurazioneCorrente();
   const provider = cfg.provider;
   const apiKey = provider === 'openai' ? cfg.openaiKey : cfg.anthropicKey;
   const model = provider === 'openai' ? cfg.openaiModel : cfg.anthropicModel;
@@ -168,10 +178,13 @@ async function prova() {
 
   try {
     const r = await chrome.runtime.sendMessage({
-      action: 'test',
+      action: 'testCapability',
       payload: { provider, apiKey, model }
     });
-    if (r?.ok) mostraEsito(`✅ Connessione riuscita con ${model}!`, true);
+    if (r?.ok) {
+      configurazioneVerificata = firma(cfg);
+      mostraEsito(`✅ Modello e ricerca ufficiale verificati con ${model}. Ora puoi salvare.`, true);
+    }
     else mostraEsito('❌ Errore: ' + (r?.error || 'risposta non valida'), false);
   } catch (e) {
     mostraEsito('❌ Errore: ' + e.message, false);

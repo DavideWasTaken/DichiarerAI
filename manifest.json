@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "DichiarerAI",
-  "version": "1.0.0",
-  "description": "Compila la dichiarazione dei redditi precompilata con l'aiuto dell'intelligenza artificiale (Claude o OpenAI).",
+  "version": "1.1.0",
+  "description": "Experimental review assistant for Italy's pre-filled tax return, grounded in official sources.",
   "permissions": ["storage", "sidePanel", "scripting", "activeTab", "tabs"],
   "host_permissions": [
     "https://dichiarazioneprecompilata.agenziaentrate.gov.it/*",
