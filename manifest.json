@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "DichiarerAI",
   "version": "1.1.0",
-  "description": "Experimental review assistant for Italy's pre-filled tax return, grounded in official sources.",
+  "description": "Review assistant for Italy's pre-filled tax return, grounded in official sources.",
   "permissions": ["storage", "sidePanel", "scripting", "activeTab", "tabs"],
   "host_permissions": [
     "https://dichiarazioneprecompilata.agenziaentrate.gov.it/*",

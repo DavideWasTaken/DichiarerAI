@@ -1,6 +1,6 @@
 # DichiarerAI 1.1.0
 
-This release turns DichiarerAI into a source-grounded experimental assistant:
+This release turns DichiarerAI into a source-grounded review assistant:
 
 - current official Revenue Agency web sources are required for every proposal;
 - OpenAI Responses and Anthropic hosted search are supported;
@@ -9,4 +9,4 @@ This release turns DichiarerAI into a source-grounded experimental assistant:
 - the extension never saves or submits a tax return;
 - automated policy, provider, and page-safety tests are included.
 
-This software is experimental and does not replace professional tax advice. Review every value and source before using it.
+This software does not replace professional tax advice. Review every value and source before using it.

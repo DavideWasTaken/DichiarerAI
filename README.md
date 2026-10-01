@@ -3,7 +3,7 @@
 
 # DichiarerAI
 
-**An experimental, source-grounded review assistant for Italy's pre-filled tax return.**
+**A source-grounded review assistant for Italy's pre-filled tax return.**
 
 [![Chrome MV3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4?logo=googlechrome&logoColor=white)](manifest.json)
 [![Tests](https://github.com/DavideWasTaken/DichiarerAI/actions/workflows/verify.yml/badge.svg)](https://github.com/DavideWasTaken/DichiarerAI/actions/workflows/verify.yml)
@@ -88,6 +88,6 @@ tests/                 Node/jsdom regression tests
 
 ## Important limitation
 
-DichiarerAI is an experimental prototype, not tax or legal advice. AI output and online sources can be incomplete or wrong. You remain responsible for checking every value and for the final return.
+DichiarerAI is a review tool, not tax or legal advice. AI output and online sources can be incomplete or wrong. You remain responsible for checking every value and for the final return.
 
 Original project code is available under the [MIT License](LICENSE). The bundled SheetJS file keeps its Apache-2.0 license; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
